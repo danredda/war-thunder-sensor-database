@@ -1,7 +1,7 @@
 # War Thunder Sensor Database
 The War Thunder Sensor Database is an application built atop PHPDesktop, which allows a user to view and assess information about sensors within War Thunder by parsing the data in the datamined assets, and computing various bits of information such as RWR threat tables, sensor sector coverage, among many more things.
 
-Thanks to Gszabi, Oshida, FlareFlo who's datamine work and assistance in understanding the data has helped make this possible.
+Thanks to Gszabi, Oshida, FlareFlo, and many more who's datamine work and assistance in understanding the data has helped make this possible.
 
 ## Table of Contents
 
