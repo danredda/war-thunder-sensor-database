@@ -15,11 +15,11 @@ Thanks to Gszabi, Oshida, FlareFlo, and many more who's datamine work and assist
 ## Downloading the application
 1. First you will need to download the latest version of PHP Desktop Chrome at the following link https://github.com/cztomczak/phpdesktop?tab=readme-ov-file#downloads.
 1. Once you have this downloaded, extract the contents somewhere you would like to work.
-1. Delete the WWW folder and the php-desktop.exe files (as they are no longer required)
+1. Delete the `www` folder and the `phpdesktop-chrome.exe` files (as they are no longer required)
 1. You can then either clone the git repo to that folder location, or copy the files manually - replacing everything in the extracted phpdesktop files with the files from the repo.
 
 ## Launching the application
-To launch the application, run the "sensor-database.exe" file in the main folder. This will launch a local PHP server using PHP Desktop, and open up the main page of the Database.
+To launch the application, run the `sensor-information.exe` file in the main folder. This will launch a local PHP server using PHP Desktop, and open up the main page of the Database.
 
 ## Updating the application
 Currently there is no way to update the application through the application. You will need to download the latest version from the git repository.
