@@ -36,6 +36,10 @@
         return $convertValue + 90;
     }
 
+    function convertAbs($value) {
+        return $value < 0 ? 360 - abs($value) : $value;
+    }
+
     function restructureUnits($groupUnitsArray) {
         $returnArr = array();
         foreach($groupUnitsArray as $unit) {
@@ -198,11 +202,13 @@
                                             if ($sector['AngleFind'] == 1) {
                                                 $strokeColour = 'green';
                                             }
-                                            $start = $sector['Azimuth'] - ($sector['HorizontalWidth']/2);
-                                            $end = $sector['Azimuth'] + ($sector['HorizontalWidth']/2);
+                                            $azimuth = convertAbs($sector['Azimuth']);
+                                            $start = $azimuth - ($sector['HorizontalWidth']/2);
+                                            $end = $azimuth + ($sector['HorizontalWidth']/2);
 
-                                            $startVertical = $sector['Elevation'] - ($sector['VerticalWidth']/2);
-                                            $endVertical = $sector['Elevation'] + ($sector['VerticalWidth']/2);
+                                            $elevation = convertAbs($sector['Elevation']);
+                                            $startVertical = $elevation - ($sector['VerticalWidth']/2);
+                                            $endVertical = $elevation + ($sector['VerticalWidth']/2);
                                             
                                             $verticalPlusMinus = $sector['VerticalWidth']/2;
                                             if (($end-$start) < 0 || $end > 270 || $start < 90) {
@@ -217,18 +223,16 @@
                                             }
                                         }
                                         if ($maxVerticalFront > 0) {
-                                            echo "<text x=\"70\" y=\"145\" class=\"small\" stroke=\"white\">+/- $maxVerticalFront&deg;</text>";
+                                            echo "<text x=\"85\" y=\"145\" class=\"small\" stroke=\"white\">&pm; $maxVerticalFront&deg;</text>";
                                         }
                                         if ($maxVerticalRear > 0) {
-                                            echo "<text x=\"180\" y=\"145\" class=\"small\" stroke=\"white\">+/- $maxVerticalRear&deg;</text>";
+                                            echo "<text x=\"180\" y=\"145\" class=\"small\" stroke=\"white\">&pm; $maxVerticalRear&deg;</text>";
                                         }
 
                                         foreach ($noIndicateSector as $sector) {
-                                            $start = $sector['Azimuth'] - ($sector['HorizontalWidth']/2);
-                                            $end = $sector['Azimuth'] + ($sector['HorizontalWidth']/2);
-
-                                            $startVertical = $sector['Elevation'] - ($sector['VerticalWidth']/2);
-                                            $endVertical = $sector['Elevation'] + ($sector['VerticalWidth']/2);
+                                            $elevation = convertAbs($sector['Elevation']);
+                                            $startVertical = $elevation - ($sector['VerticalWidth']/2);
+                                            $endVertical = $elevation + ($sector['VerticalWidth']/2);
                                             echo "<path d=\"". describeArc(150, 150, 120, convertLeft($startVertical), convertLeft($endVertical)) ."\"  fill=\"none\" stroke=\"teal\" stroke-width=\"1\" />";
                                         }
                                     ?>
@@ -267,7 +271,8 @@
                     <div class="col">
                         <h3>Units with this RWR:</h3>
                         <?php
-                            $unitsWithRWR = PDO_FetchAll("SELECT ifnull(UNITS.UnitLabel, UNITSENSORS.UnitUniqueName) as UnitLabel FROM UNITSENSORS
+                            $unitsWithRWR = PDO_FetchAll("SELECT ifnull(UNITS.UnitLabel, UNITSENSORS.UnitUniqueName) as UnitLabel
+                                                            FROM UNITSENSORS
                                                             LEFT JOIN UNITS
                                                             ON UNITS.UnitUniqueName = UNITSENSORS.UnitUniqueName
                                                             WHERE UNITSENSORS.SensorUniqueName = :name
@@ -657,7 +662,10 @@
                 }
 
                 $horizontalSectors = 8;
-                $verticalSectors = 4;
+                $verticalSectors = 8;
+                if (sizeof($sectors) < 4) {
+                    $horizontalSectors = 16;
+                }
 
                 foreach ($sectors as $key=>$sector) {
                     $colour = '0xFF0000';

@@ -36,6 +36,10 @@
         return $convertValue + 90;
     }
 
+    function convertAbs($value) {
+        return $value < 0 ? 360 - abs($value) : $value;
+    }
+
     function restructureUnits($groupUnitsArray) {
         $returnArr = array();
         foreach($groupUnitsArray as $unit) {
@@ -157,10 +161,12 @@
                                             if ($sector['AngleFind'] == 1) {
                                                 $strokeColour = 'green';
                                             }
-                                            $start = $sector['Azimuth'] - ($sector['HorizontalWidth']/2);
-                                            $end = $sector['Azimuth'] + ($sector['HorizontalWidth']/2);
+                                            $azimuth = convertAbs($sector['Azimuth']);
+                                            $start = $azimuth - ($sector['HorizontalWidth']/2);
+                                            $end = $azimuth + ($sector['HorizontalWidth']/2);
 
-                                            $startVertical = $sector['Elevation'] - ($sector['VerticalWidth']/2);
+                                            $elevation = convertAbs($sector['Elevation']);
+                                            $startVertical =  - ($sector['VerticalWidth']/2);
                                             $endVertical = $sector['Elevation'] + ($sector['VerticalWidth']/2);
                                             
                                             $verticalPlusMinus = $sector['VerticalWidth']/2;
@@ -176,10 +182,10 @@
                                             }
                                         }
                                         if ($maxVerticalFront > 0) {
-                                            echo "<text x=\"70\" y=\"145\" class=\"small\" stroke=\"white\">+/- $maxVerticalFront&deg;</text>";
+                                            echo "<text x=\"85\" y=\"145\" class=\"small\" stroke=\"white\">&pm; $maxVerticalFront&deg;</text>";
                                         }
                                         if ($maxVerticalRear > 0) {
-                                            echo "<text x=\"180\" y=\"145\" class=\"small\" stroke=\"white\">+/- $maxVerticalRear&deg;</text>";
+                                            echo "<text x=\"180\" y=\"145\" class=\"small\" stroke=\"white\">&pm; $maxVerticalRear&deg;</text>";
                                         }
                                     ?>
                                 </svg>
@@ -320,8 +326,11 @@
                     return ($degrees/180)*pi();
                 }
 
-                $horizontalSectors = 12;
+                $horizontalSectors = 8;
                 $verticalSectors = 8;
+                if (sizeof($sectors) < 4) {
+                    $horizontalSectors = 16;
+                }
 
                 foreach ($sectors as $key=>$sector) {
                     $colour = '0xFF0000';
