@@ -78,7 +78,7 @@
                         <h3>MLWS Basic Information</h3>
                         <table class="table table-bordered">
                             <tr>
-                                <th>Range</th>
+                                <th>Range (m)</th>
                                 <td><?php echo $MLWS['Range']; ?></td>
                             </tr>
                             <tr>
