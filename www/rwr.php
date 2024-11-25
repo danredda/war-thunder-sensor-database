@@ -23,9 +23,9 @@
 
     function intToYesNo($intvalue) {
         if ($intvalue == 1) {
-            return 'Yes';
+            return '<span class="yes-green">Yes</span>';
         }
-        return 'No';
+        return '<span class="no-red">No</span>';
     }
     
     function convertLeft($convertValue) {
@@ -34,6 +34,14 @@
 
     function convertRight($convertValue) {
         return $convertValue + 90;
+    }
+
+    function restructureUnits($groupUnitsArray) {
+        $returnArr = array();
+        foreach($groupUnitsArray as $unit) {
+            $returnArr[$unit['UnitType']][] = $unit['UnitLabel'];
+        }
+        return $returnArr;
     }
 
 ?>
@@ -63,6 +71,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="threat-tab" data-bs-toggle="tab" data-bs-target="#threat" type="button" role="tab" aria-controls="threat" aria-selected="false">Threat Identification</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="receiver-tab" data-bs-toggle="tab" data-bs-target="#receiverlist" type="button" role="tab" aria-controls="receiverlist" aria-selected="false">Receiver List</button>
             </li>
         </ul>
         <div class="tab-content">
@@ -180,6 +191,8 @@
                                     <text x="50%" y="5%" dominant-baseline="middle" text-anchor="middle" fill="white">Top</text>
                                     <text x="50%" y="95%" dominant-baseline="middle" text-anchor="middle" fill="white">Bottom</text>
                                     <?php
+                                        $maxVerticalFront = 0;
+                                        $maxVerticalRear = 0;
                                         foreach ($sectors as $key=>$sector) {
                                             $strokeColour = 'red';
                                             if ($sector['AngleFind'] == 1) {
@@ -190,14 +203,24 @@
 
                                             $startVertical = $sector['Elevation'] - ($sector['VerticalWidth']/2);
                                             $endVertical = $sector['Elevation'] + ($sector['VerticalWidth']/2);
+                                            
+                                            $verticalPlusMinus = $sector['VerticalWidth']/2;
                                             if (($end-$start) < 0 || $end > 270 || $start < 90) {
                                                 // FRONT SECTOR (closest to nose). Some RWRs have multiple sectors here, but unlikely they differ
+                                                $maxVerticalFront = max($maxVerticalFront, $verticalPlusMinus);
                                                 echo "<path d=\"". describeArc(150, 150, 110, convertLeft($startVertical), convertLeft($endVertical)) ."\"  fill=\"none\" stroke=\"".$strokeColour."\" stroke-width=\"1\" />";
                                             }
                                             if ($end > 90 || $start < 270) {
+                                                $maxVerticalRear = max($maxVerticalRear, $verticalPlusMinus);
                                                 // REAR SECTOR (closest to nose). Some RWRs have multiple sectors here, but unlikely they differ
                                                 echo "<path d=\"". describeArc(150, 150, 110, convertRight($startVertical), convertRight($endVertical)) ."\"  fill=\"none\" stroke=\"".$strokeColour."\" stroke-width=\"1\" />";
                                             }
+                                        }
+                                        if ($maxVerticalFront > 0) {
+                                            echo "<text x=\"70\" y=\"145\" class=\"small\" stroke=\"white\">+/- $maxVerticalFront&deg;</text>";
+                                        }
+                                        if ($maxVerticalRear > 0) {
+                                            echo "<text x=\"180\" y=\"145\" class=\"small\" stroke=\"white\">+/- $maxVerticalRear&deg;</text>";
                                         }
 
                                         foreach ($noIndicateSector as $sector) {
@@ -321,17 +344,17 @@
                         //Threat has already been added to another category, move on
                         continue;
                     }
-                    $track = $RWR['DetectTrack'] == 1 ? ($threat['RadarTrack'] == 1 ? 'Yes' : 'No') : ($threat['Track'] == 1 ? ($threat['RadarTrack'] == 1 ? 'Yes' : 'No') : 'No');
+                    $track = $RWR['DetectTrack'] == 1 ? intToYesNo($threat['RadarTrack']) : ($threat['Track'] == 1 ? intToYesNo($threat['RadarTrack']) : intToYesNo(0));
 
                     $transmitBandAlpha = $threat['TransmitBand'];
                     if ($transmitBandAlpha != null) {
                         $TransmitBand = "Band$transmitBandAlpha";
-                        $launch = $RWR['DetectLaunch'] == 1 ? ($RWR[$TransmitBand] == 1 ? 'Yes' : 'No') : ($threat['DetectLaunch'] == 1 ? ($RWR[$TransmitBand] == 1 ? 'Yes' : 'No') : 'No');
+                        $launch = $RWR['DetectLaunch'] == 1 ? (intToYesNo($RWR[$TransmitBand])) : ($threat['DetectLaunch'] == 1 ? (intToYesNo($RWR[$TransmitBand])) : intToYesNo(0));
                     } else {
-                        $launch = 'No';
+                        $launch = intToYesNo(0);
                     }
                     
-                    if ($threat['Launch'] == 1 && $launch == "No") {
+                    if ($threat['Launch'] == 1 && $launch == intToYesNo(0)) {
                         // if the threat has "launchmode" configured (ie: CW illum), but doesn't actually transmit the signal, don't include.
                         // For things like APG-66 (F-16A) in the Groups that doesn't actually have any way to CW guide
                         continue;
@@ -346,7 +369,7 @@
                         array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
                                         array_column($groupUnits, 'UnitLabel'), SORT_ASC,
                                         $groupUnits);
-                        $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
+                        $rwrGroup['UnitList'] = restructureUnits($groupUnits);
                         $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                         $rwrThreats[] = $rwrGroup;
                         $rwrGroup = array();
@@ -385,7 +408,7 @@
                     array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
                                     array_column($groupUnits, 'UnitLabel'), SORT_ASC,
                                     $groupUnits);
-                    $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
+                    $rwrGroup['UnitList'] = restructureUnits($groupUnits);
                     $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                     $rwrThreats[] = $rwrGroup;
                     $rwrGroup = array();
@@ -414,14 +437,14 @@
                 $untracked = PDO_FetchAll($untrackedQuery);
 
                 foreach ($untracked as $unknown) {
-                    $track = $RWR['DetectTrack'] == 1 ? ($unknown['RadarTrack'] == 1 ? 'Yes' : 'No') : 'No';
+                    $track = $RWR['DetectTrack'] == 1 ? intToYesNo($unknown['RadarTrack']) : intToYesNo(0);
                     
                     $transmitBandAlpha = $unknown['TransmitBand'];
                     if ($transmitBandAlpha != null) {
                         $TransmitBand = "Band$transmitBandAlpha";
-                        $launch = $RWR['DetectLaunch'] == 1 ? ($RWR[$TransmitBand] == 1 ? 'Yes' : 'No') : 'No';
+                        $launch = $RWR['DetectLaunch'] == 1 ? intToYesNo($RWR[$TransmitBand]) : intToYesNo(0);
                     } else {
-                        $launch = 'No';
+                        $launch = intToYesNo(0);
                     }
                     // check if launch or tracking detect value has changed for unidentified radar
                     if (array_key_exists('GroupName', $rwrGroup) && ($rwrGroup['DetectTracking'] != $track ||  $rwrGroup['DetectLaunch'] != $launch)) {
@@ -430,7 +453,7 @@
                         array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
                                         array_column($groupUnits, 'UnitLabel'), SORT_ASC,
                                         $groupUnits);
-                        $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
+                        $rwrGroup['UnitList'] = restructureUnits($groupUnits);
                         $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                         $rwrThreats[] = $rwrGroup;
                         $rwrGroup = array();
@@ -464,7 +487,7 @@
                     array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
                                     array_column($groupUnits, 'UnitLabel'), SORT_ASC,
                                     $groupUnits);
-                    $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
+                    $rwrGroup['UnitList'] = restructureUnits($groupUnits);
                     $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                     $rwrThreats[] = $rwrGroup;
                 }
@@ -503,12 +526,67 @@
                                 echo ($showPresenceLabels ? "<td>".$rwrThreat['PresenceLabel']."</td>" : '');
                                 echo "<th>".$rwrThreat['DetectTracking']."</th>";
                                 echo "<th>".$rwrThreat['DetectLaunch']."</th>";
-                                echo "<td>".implode(', ', $units)."</td>";
+                                echo "<td>";
+                                foreach($units as $unittype=>$unitlist) {
+                                    echo "<p><strong>";
+                                    if ($unittype == 'AIR') {
+                                        echo "Air: ";
+                                    } else if ($unittype == 'GRND') {
+                                        echo "Ground: ";
+                                    } else if ($unittype == 'NVL') {
+                                        echo "Naval: ";
+                                    }
+                                    echo "</strong>";
+                                    echo implode(', ', $unitlist);
+                                    echo "</p>";
+                                }
+                                echo "</td>";
                                 echo "</tr>";
                             }
                         ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="tab-pane" id="receiverlist" role="tabpanel" aria-labelledby="receiver-tab">
+                <div class="row pt-3">
+                    <h3>Full Receiver Sector List</h3>
+                    <table class="table table-bordered">
+                        <thead style="position: sticky;top: 0" >
+                            <tr>
+                                <th class="col-2">Azimuth (0 = Nose, Negative = Left, Positive = Right)</th>
+                                <th class="col-2">Horizontal Width (Centred on Azimuth)</th>
+                                <th class="col-2">Elevation (0 = Horizon, Positive = Up, Negative = Down)</th>
+                                <th class="col-2">Elevation Width (Centred on Elevation)</th>
+                                <th class="col-2">Signal Angle Finder (No = Sector RWR)</th>
+                                <th class="col-2">Indicator (Shows on RWR)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                                foreach ($sectors as $key=>$sector) {
+                                    echo "<tr>";
+                                    echo "<td>".$sector['Azimuth']."</td>";
+                                    echo "<td>".$sector['HorizontalWidth']."</td>";
+                                    echo "<td>".$sector['Elevation']."</td>";
+                                    echo "<td>".$sector['VerticalWidth']."</td>";
+                                    echo "<td>".intToYesNo($sector['AngleFind'])."</td>";
+                                    echo "<td><span class=\"yes-green\">Yes</span></td>";
+                                    echo "</tr>";
+                                }
+                                foreach ($noIndicateSector as $key=>$sector) {
+                                    echo "<tr>";
+                                    echo "<td>".$sector['Azimuth']."</td>";
+                                    echo "<td>".$sector['HorizontalWidth']."</td>";
+                                    echo "<td>".$sector['Elevation']."</td>";
+                                    echo "<td>".$sector['VerticalWidth']."</td>";
+                                    echo "<td>".intToYesNo($sector['AngleFind'] )."</td>";
+                                    echo "<td><span class=\"no-red\">No</span></td>";
+                                    echo "</tr>";
+                                }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

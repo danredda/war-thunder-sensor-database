@@ -1,4 +1,7 @@
-/* path[id|="sector"]:hover { 
-    fill: purple;
-    cursor:hand;
-} */
+.yes-green {
+    color: #00BF7D;
+}
+
+.no-red {
+    color: #ff4c61;
+}

@@ -666,7 +666,7 @@
         $mlwsDefinition->AutomaticFlares = checkAndConvertBoolean($sensorObject, 'automaticFlares');
         $mlwsDefinition->FlareSeriesInterval = checkAndConvertFloat($sensorObject, 'flaresSeriesInterval', true);
         $mlwsDefinition->FlareInterval = checkAndConvertFloat($sensorObject, 'flaresInterval', true);
-        $mlwsDefinition->NumberFlares = checkAndConvertInteger($sensorObject, 'trackedTargetsMax', true);
+        $mlwsDefinition->NumberFlares = checkAndConvertInteger($sensorObject, 'numFlares', true);
         $mlwsDefinition->ClosureRateMin = checkAndConvertFloat($sensorObject, 'closureRateMin', true);
         $mlwsDefinition->AngularRateMax = checkAndConvertFloat($sensorObject, 'angularRateMax', true);;
         $mlwsDefinition->SignalHoldTime = checkAndConvertFloat($sensorObject, 'signalHoldTime', true);;
