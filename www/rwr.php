@@ -39,7 +39,6 @@
 ?>
 
 <html data-bs-theme="dark">
-    <title>RWR Information - RWR</title>
     <?php
     include "./_head.php";
 
@@ -48,11 +47,13 @@
     $RWR = PDO_FetchRow("SELECT * FROM RWR WHERE RWRUniqueName = :name", array("name"=>$selectedRWR));
     $RWRName = PDO_FetchRow("SELECT ifnull(ifnull(SensorLabel, Name), RWRUniqueName) as SensorLabel, RWRUniqueName FROM RWR LEFT JOIN SENSORS ON RWRUniqueName = SensorUniqueName WHERE RWRUniqueName = :name", array("name"=>$selectedRWR));
     // var_dump($RWR);
+    $PageTitle = $RWRName['SensorLabel']." (".$RWRName['RWRUniqueName'].")";
 
     ?>
+    <title>RWR Information - <?php echo $PageTitle; ?></title>
 
     <div class="container-fluid">
-        <?php echo "<h2>".$RWRName['SensorLabel']." (".$RWRName['RWRUniqueName'].")</h2>";?>
+        <?php echo "<h2>".$PageTitle."</h2>";?>
         <ul class="nav nav-tabs" id="rwr-tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab" aria-controls="basic" aria-selected="true">Basic Information</button>
@@ -288,7 +289,7 @@
                 // Threat data
                 $threats = PDO_FetchAll("SELECT GRP.GroupName, ifnull(ifnull(S.SensorLabel, R.Name), R.RadarUniqueName) as RadarName, US.UnitUniqueName, ifnull(U.UnitLabel, US.UnitUniqueName) as UnitLabel, RM.RadarUniqueName, RT.Band as RadarBand,
                                 max(RS.Track) as RadarTrack,  GRP.IsDirectionGenericGroup, GRP.IsPresenceGenericGroup, GRP.DirectionLabel, GRP.PresenceLabel, RTRN.Band as TransmitBand, RTRN.TransmitterType,
-                                GRP.DetectLaunch, GRP.Launch, GRP.Track, GRP.Search, GRP.Priority
+                                GRP.DetectLaunch, GRP.Launch, GRP.Track, GRP.Search, GRP.Priority, US.UnitType
                                 FROM RWR_GROUPS as GRP
                                 JOIN Radar R ON GRP.RadarName = R.Name
                                 JOIN UNITSENSORS as US ON US.SensorUniqueName = R.RadarUniqueName
@@ -316,7 +317,7 @@
                 $trackedUnitRadar = array();
                 foreach ($threats as $threat) {
                     $combinedUnitRadar = $threat['UnitUniqueName'].$threat['RadarUniqueName'];
-                    if(($threat['IsDirectionGenericGroup'] = 1) && in_array($combinedUnitRadar, $trackedUnitRadar)) {
+                    if(($threat['IsDirectionGenericGroup'] == 1) && in_array($combinedUnitRadar, $trackedUnitRadar)) {
                         //Threat has already been added to another category, move on
                         continue;
                     }
@@ -330,12 +331,22 @@
                         $launch = 'No';
                     }
                     
+                    if ($threat['Launch'] == 1 && $launch == "No") {
+                        // if the threat has "launchmode" configured (ie: CW illum), but doesn't actually transmit the signal, don't include.
+                        // For things like APG-66 (F-16A) in the Groups that doesn't actually have any way to CW guide
+                        continue;
+                    }
                     if (array_key_exists('GroupName', $rwrGroup) && (
                             $rwrGroup['GroupName'] != $threat['GroupName'] || 
                             ($rwrGroup['GroupName'] == $threat['GroupName'] && $rwrGroup['DetectTracking'] != $track) || 
                             ($rwrGroup['GroupName'] == $threat['GroupName'] && $rwrGroup['DetectLaunch'] != $launch))) {
                         // Group has changed. Add to Array and reset.
-                        $rwrGroup['UnitList'] = array_values(array_unique($groupUnits));
+                        // SORT the Units
+                        $groupUnits = array_values(array_unique($groupUnits, SORT_REGULAR));
+                        array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
+                                        array_column($groupUnits, 'UnitLabel'), SORT_ASC,
+                                        $groupUnits);
+                        $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
                         $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                         $rwrThreats[] = $rwrGroup;
                         $rwrGroup = array();
@@ -358,7 +369,10 @@
                             $presenceLabelsList[] = $threat['PresenceLabel'];
                             $rwrGroup["DetectTracking"] = $track;
                             $rwrGroup["DetectLaunch"] = $launch;
-                            $groupUnits[] = $threat['UnitLabel'];
+                            $UntData = array();
+                            $UntData['UnitLabel'] = $threat['UnitLabel'];
+                            $UntData['UnitType'] = $threat['UnitType'];
+                            $groupUnits[] = $UntData;
                             $groupRadars[] = $threat['RadarName'];
                             $trackedRadars[] = $threat['RadarUniqueName'];
                             $trackedUnitRadar[] = $combinedUnitRadar;
@@ -367,7 +381,11 @@
                 }
                 if (array_key_exists('GroupName', $rwrGroup)) {
                     // Add last group to Array
-                    $rwrGroup['UnitList'] = array_values(array_unique($groupUnits));
+                    $groupUnits = array_values(array_unique($groupUnits, SORT_REGULAR));
+                    array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
+                                    array_column($groupUnits, 'UnitLabel'), SORT_ASC,
+                                    $groupUnits);
+                    $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
                     $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                     $rwrThreats[] = $rwrGroup;
                     $rwrGroup = array();
@@ -377,7 +395,7 @@
                 
                 // Get all untracked radars. These will NOT have a direction or presence label, but will still trigger the RWR pings/locks
                 $untrackedQuery = "SELECT ifnull(ifnull(S.SensorLabel, R.Name), R.RadarUniqueName) as RadarName, US.UnitUniqueName, ifnull(U.UnitLabel, US.UnitUniqueName) as UnitLabel, RM.RadarUniqueName, RT.Band as RadarBand,
-                                    max(RS.Track) as RadarTrack, RTRN.Band as TransmitBand, RTRN.TransmitterType
+                                    max(RS.Track) as RadarTrack, RTRN.Band as TransmitBand, RTRN.TransmitterType, US.UnitType
                                     FROM Radar R
                                     JOIN UNITSENSORS as US ON US.SensorUniqueName = R.RadarUniqueName
                                     JOIN UNITS as U ON U.UnitUniqueName = US.UnitUniqueName
@@ -393,16 +411,6 @@
                                     AND RT.VisibilityType = 'radar'
                                     GROUP BY RS.RadarUniqueName, US.UnitUniqueName, RT.Band
                                     ORDER BY RadarTrack, TransmitBand ASC";
-                // $query = "SELECT RADAR.Name as RadarName, UNITS.UnitLabel, UNITSENSORS.UnitUniqueName, RADAR.RadarUniqueName, RADAR.RadarBand
-                //                             FROM RADAR
-                //                             LEFT JOIN UNITSENSORS
-                //                             ON UNITSENSORS.SensorUniqueName = RADAR.RadarUniqueName
-                //                             LEFT JOIN UNITLANGS
-                //                             ON UNITSENSORS.UnitUniqueName = UNITLANGS.UnitUniqueName
-                //                             LEFT JOIN UNITS
-                //                             ON UNITS.UnitUniqueName = UNITLANGS.LangNames
-                //                             WHERE RadarUniqueName NOT IN (\"".implode('","', $trackedRadars)."\")
-                //                             AND Units.UnitLabel IS NOT NULL";
                 $untracked = PDO_FetchAll($untrackedQuery);
 
                 foreach ($untracked as $unknown) {
@@ -418,7 +426,11 @@
                     // check if launch or tracking detect value has changed for unidentified radar
                     if (array_key_exists('GroupName', $rwrGroup) && ($rwrGroup['DetectTracking'] != $track ||  $rwrGroup['DetectLaunch'] != $launch)) {
                         // Detection has changed. Add to Array and reset.
-                        $rwrGroup['UnitList'] = array_values(array_unique($groupUnits));
+                        $groupUnits = array_values(array_unique($groupUnits, SORT_REGULAR));
+                        array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
+                                        array_column($groupUnits, 'UnitLabel'), SORT_ASC,
+                                        $groupUnits);
+                        $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
                         $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                         $rwrThreats[] = $rwrGroup;
                         $rwrGroup = array();
@@ -437,7 +449,10 @@
                         $RadarBand = "Band$BandAlpha";
                         if ($RWR[$RadarBand] == 1) {
                             // Band is valid for detection, continue
-                            $groupUnits[] = $unknown['UnitLabel'];
+                            $UntData = array();
+                            $UntData['UnitLabel'] = $unknown['UnitLabel'];
+                            $UntData['UnitType'] = $unknown['UnitType'];
+                            $groupUnits[] = $UntData;
                             $groupRadars[] = $unknown['RadarName'];
                         }
                     }
@@ -445,7 +460,11 @@
 
                 if (sizeof($groupUnits) > 0) {
                     // Add unknown radars
-                    $rwrGroup['UnitList'] = array_values(array_unique($groupUnits));
+                    $groupUnits = array_values(array_unique($groupUnits, SORT_REGULAR));
+                    array_multisort(array_column($groupUnits, 'UnitType'), SORT_ASC,
+                                    array_column($groupUnits, 'UnitLabel'), SORT_ASC,
+                                    $groupUnits);
+                    $rwrGroup['UnitList'] = array_column($groupUnits, 'UnitLabel');
                     $rwrGroup['RadarList'] = array_values(array_unique($groupRadars));
                     $rwrThreats[] = $rwrGroup;
                 }
@@ -477,7 +496,6 @@
                             foreach ($rwrThreats as $rwrThreat) {
                                 $units = $rwrThreat['UnitList'];
                                 $radars = $rwrThreat['RadarList'];
-                                sort($units);
                                 echo "<tr>";
                                 echo "<th>".$rwrThreat['GroupName']."</th>";
                                 echo "<td>".implode(', ', $radars)."</td>";
