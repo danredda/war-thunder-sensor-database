@@ -27,6 +27,11 @@ Currently there is no way to update the application through the application. You
 ## Updating the database
 The application has been built with future additions in sensors and units to the War Thunder client in mind. To that end, there is a page you can access by clicking on the "update database" link at the bottom of the main screen. On this page, the application will check the last version of the files you loaded, with the latest version of the datamined War Thunder client in Gszabi's repository. If there is a discrepency, a button will appear to allow you to update the database. When clicking this button, a download of the relevant datamined .blk files will be triggered to the www/data_raw folder from the War Thunder Open Source Foundation API. The application will then read these files, and re-build the database. After which these files will then be removed. Overall the update process for both Sensors and Units is around 400MB total.
 
+In order to use this updating feature for the Unit Sensors, you will need to change the following 2 lines in your `php/php.ini` file:
+
+* `max_execution_time=300` (time in s)
+* `memory_limit=512M` (downloading the FMs etc. is quite large as it extracts/reads the files)
+
 ## Is there a website version
 Currently there is not a website version of the application available that does not require a download. In the future this may change once the toolset is more fleshed out and if it proves viable/useful to do.
 
