@@ -781,10 +781,11 @@
 
     function getGroupLabel($groupName, $labelTable, $rwrName) {
         global $UIThreats;
-        //return associative array containing the label, and true/false for generic. These will be overridden if a value is returned
-        $arrayToReturn = new stdClass();
-        $arrayToReturn->LabelValue = "?";
-        $arrayToReturn->IsGeneric = 1;
+        //return object containing the label, and true/false for generic. These will be overridden if a value is returned
+        $groupLabelObj = new stdClass();
+        $groupLabelObj->LabelValue = "?";
+        $groupLabelObj->IsGeneric = 1;
+        $groupLabelArray = array();
         foreach($labelTable as $row) {
             if (isset($row->group)) {
                 $groups = $row->group;
@@ -792,32 +793,34 @@
                     foreach($groups as $group) {
                         if ($group == $groupName) {
                             $labelText = $row->text;
-                            $arrayToReturn->IsGeneric = 0;
-                            $arrayToReturn->LabelValue = $labelText;
-            
+                            $groupLabelObj->IsGeneric = 0;
                             // is it generic? If so, grab the generic label value and then set generic
                             if (array_key_exists($labelText, $UIThreats)) {
-                                $arrayToReturn->LabelValue = $UIThreats[$labelText];
-                                $arrayToReturn->IsGeneric = 1;
+                                $groupLabelArray[] = $UIThreats[$labelText];
+                                $groupLabelObj->IsGeneric = 1;
+                            } else {
+                                $groupLabelArray[] = $labelText;
                             }
                         }
                     }
                 } else if ($groups == $groupName) {
                     // Key was found, lets continue
                     $labelText = $row->text;
-                    $arrayToReturn->IsGeneric = 0;
-                    $arrayToReturn->LabelValue = $labelText;
+                    $groupLabelObj->IsGeneric = 0;
 
                     // is it generic? If so, grab the generic label value and then set generic
                     if (array_key_exists($labelText, $UIThreats)) {
-                        $arrayToReturn->LabelValue = $UIThreats[$labelText];
-                        $arrayToReturn->IsGeneric = 1;
+                        $groupLabelArray[] = $UIThreats[$labelText];
+                        $groupLabelObj->IsGeneric = 1;
+                    } else {
+                        $groupLabelArray[] = $labelText;
                     }
                 }
             }
         }
 
-        return $arrayToReturn;
+        $groupLabelObj->LabelValue = implode(", ", $groupLabelArray);
+        return $groupLabelObj;
     }
 
     // this function is required because gaijin is big dumb, and has mutltiple entries for the same groups for some inexplicable reason that ALSO contain the same Radar. Identifies unique using a combination of RWR, Group, and Radar - merging any dupes
