@@ -642,6 +642,8 @@
                     object.scale.setScalar(0.003);
                     object.rotation.x = -(Math.PI / 2)
                     object.rotation.z = -(Math.PI / 2)
+                    object.position.x = 0.15
+                    object.position.y = -0.25
                     object.children[0].material = new THREE.MeshBasicMaterial({ color: 0xAA00AA} );
                     
                     scene.add(object)
