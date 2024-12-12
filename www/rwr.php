@@ -558,7 +558,7 @@
                     <table class="table table-bordered">
                         <thead style="position: sticky;top: 0" >
                             <tr>
-                                <th class="col-2">Azimuth (0 = Nose, Negative = Left, Positive = Right)</th>
+                                <th class="col-2">Azimuth (0 = Nose, Negative = Left, Positive = Right, 180/-180 = Rear)</th>
                                 <th class="col-2">Horizontal Width (Centred on Azimuth)</th>
                                 <th class="col-2">Elevation (0 = Horizon, Positive = Up, Negative = Down)</th>
                                 <th class="col-2">Elevation Width (Centred on Elevation)</th>

@@ -6,6 +6,7 @@
     // $units = PDO_FetchAll("SELECT UnitUniqueName, UnitLabel FROM UNITS WHERE UnitUniqueName IN (SELECT UnitUniqueName FROM UNITSENSORS) ORDER BY UnitLabel ASC");
     $rwrs = PDO_FetchAll("SELECT ifnull(ifnull(s.SensorLabel, r.Name),r.RWRUniqueName) as SensorLabel, r.RWRUniqueName FROM RWR r LEFT JOIN SENSORS s ON r.RWRUniqueName = s.SensorUniqueName ORDER BY SensorLabel ASC");
     $mlws = PDO_FetchAll("SELECT ifnull(ifnull(s.SensorLabel, maw.Name),maw.MLWSUniqueName) as SensorLabel, maw.MLWSUniqueName FROM MLWS maw LEFT JOIN SENSORS s ON maw.MLWSUniqueName = s.SensorUniqueName ORDER BY SensorLabel ASC");
+    $lws = PDO_FetchAll("SELECT ifnull(ifnull(s.SensorLabel, lws.Name),lws.LWSUniqueName) as SensorLabel, lws.LWSUniqueName FROM LWS lws LEFT JOIN SENSORS s ON lws.LWSUniqueName = s.SensorUniqueName ORDER BY SensorLabel ASC");
     ?>
 
     <div class="container">
@@ -67,6 +68,25 @@
                             ?>
                         </select>
                         <label for="SelectMLWS">Select a specific MLWS:</label>
+                    </div>
+                    <div class="text-center pt-3">
+                        <button type="submit" class="btn btn-secondary">Submit</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-6">
+                <form class="form-group border rounded p-2" action="./lws.php" method="POST">
+                    <h3 class="w-auto">Select LWS (Laser Warning)</h3>
+                    <div class="form-floating">
+                        <select name='selectedLWS' class="form-select" id="SelectLWS" required>
+                            <option value="" selected>Open to select by LWS</option>
+                            <?php 
+                                foreach ($lws as $row){
+                                    echo '<option value="' . $row['LWSUniqueName'] . '">' . $row['SensorLabel'] . ' (' . $row['LWSUniqueName'] . ') </option>';
+                                }
+                            ?>
+                        </select>
+                        <label for="SelectLWS">Select a specific LWS:</label>
                     </div>
                     <div class="text-center pt-3">
                         <button type="submit" class="btn btn-secondary">Submit</button>

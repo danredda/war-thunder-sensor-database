@@ -1,8 +1,8 @@
 <?php
-    $selectedMLWS = '';
+    $selectedLWS = '';
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $selectedMLWS = $_POST["selectedMLWS"];
+        $selectedLWS = $_POST["selectedLWS"];
     }
 
     function polarToCartesian($centerX, $centerY, $radius, $angleInDegrees) {
@@ -54,22 +54,22 @@
     <?php
     include "./_head.php";
 
-    $sectors =  PDO_FetchAll("SELECT * FROM MLWS_RECEIVERS WHERE MLWSUniqueFileName = :name", array("name"=>$selectedMLWS));
-    $MLWS = PDO_FetchRow("SELECT * FROM MLWS WHERE MLWSUniqueName = :name", array("name"=>$selectedMLWS));
-    $MLWSName = PDO_FetchRow("SELECT ifnull(ifnull(SensorLabel, Name), MLWSUniqueName) as SensorLabel, MLWSUniqueName FROM MLWS LEFT JOIN SENSORS ON MLWSUniqueName = SensorUniqueName WHERE MLWSUniqueName = :name", array("name"=>$selectedMLWS));
-    $PageTitle = $MLWSName['SensorLabel']." (".$MLWSName['MLWSUniqueName'].")";
+    $sectors =  PDO_FetchAll("SELECT * FROM LWS_RECEIVERS WHERE LWSUniqueFileName = :name", array("name"=>$selectedLWS));
+    $LWS = PDO_FetchRow("SELECT * FROM LWS WHERE LWSUniqueName = :name", array("name"=>$selectedLWS));
+    $LWSName = PDO_FetchRow("SELECT ifnull(ifnull(SensorLabel, Name), LWSUniqueName) as SensorLabel, LWSUniqueName FROM LWS LEFT JOIN SENSORS ON LWSUniqueName = SensorUniqueName WHERE LWSUniqueName = :name", array("name"=>$selectedLWS));
+    $PageTitle = $LWSName['SensorLabel']." (".$LWSName['LWSUniqueName'].")";
 
     ?>
-    <title>MLWS(MAW) Information - <?php echo $PageTitle; ?></title>
+    <title>LWS(Laser Warning) Information - <?php echo $PageTitle; ?></title>
 
     <div class="container-fluid">
         <?php echo "<h2>".$PageTitle."</h2>";?>
-        <ul class="nav nav-tabs" id="mlws-tabs" role="tablist">
+        <ul class="nav nav-tabs" id="lws-tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab" aria-controls="basic" aria-selected="true">Basic Information</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="threed-tab" data-bs-toggle="tab" data-bs-target="#threed" type="button" role="tab" aria-controls="threed" aria-selected="false">MLWS 3D Viewer</button>
+                <button class="nav-link" id="threed-tab" data-bs-toggle="tab" data-bs-target="#threed" type="button" role="tab" aria-controls="threed" aria-selected="false">LWS 3D Viewer</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="receiver-tab" data-bs-toggle="tab" data-bs-target="#receiverlist" type="button" role="tab" aria-controls="receiverlist" aria-selected="false">Receiver List</button>
@@ -79,49 +79,29 @@
             <div class="tab-pane active" id="basic" role="tabpanel" aria-labelledby="basic-tab">
                 <div class="row pt-3">
                     <div class="col-6">
-                        <h3>MLWS Basic Information</h3>
+                        <h3>LWS Basic Information</h3>
                         <table class="table table-bordered">
                             <tr>
-                                <th>Range (m)</th>
-                                <td><?php echo $MLWS['Range']; ?></td>
+                                <th>Range Target To Spot (m)</th>
+                                <td><?php echo $LWS['RangeTargetToSpot']; ?></td>
                             </tr>
                             <tr>
-                                <th>Automatic Flare Slaving Possible?</th>
-                                <td><?php echo intToYesNo($MLWS['AutomaticFlares']); ?></td>
-                            </tr>
-                            <tr>
-                                <th>Flare Series Interval (s)</th>
-                                <td><?php echo $MLWS['FlareSeriesInterval']; ?></td>
-                            </tr>
-                            <tr>
-                                <th>Flare Interval (s)</th>
-                                <td><?php echo $MLWS['FlareInterval']; ?></td>
-                            </tr>
-                            <tr>
-                                <th>Number of Flares per series</th>
-                                <td><?php echo $MLWS['NumberFlares']; ?></td>
-                            </tr>
-                            <tr>
-                                <th>Minimum Closure Rate (m/s)</th>
-                                <td><?php echo $MLWS['ClosureRateMin']; ?></td>
-                            </tr>
-                            <tr>
-                                <th>Maximum Angular Rate (&deg;/s)</th>
-                                <td><?php echo $MLWS['AngularRateMax']; ?></td>
+                                <th>Range Owner To Spot (m)</th>
+                                <td><?php echo $LWS['RangeOwnerToSpot']; ?></td>
                             </tr>
                         </table>
                     </div>
                     <div class="col-6">
-                        <h3>MLWS Receivers</h3>
+                        <h3>LWS Receivers</h3>
                         <p class="pb-2"> 
-                            <span style="color:green">Green</span> = MLWS detects the missile approach vector<br />
-                            <span style="color:red">Red</span> = MLWS does not detect the missile approach vector<br />
-                            <span style="color:white">White/Transparent</span> = No indicated MLWS coverage
+                            <span style="color:green">Green</span> = LWS detects the laser vector<br />
+                            <span style="color:red">Red</span> = LWS does not detect the laser vector<br />
+                            <span style="color:white">White/Transparent</span> = No indicated LWS coverage
                         </p>
                         <div class="row pt-2">
                             <div class="col-6">
                                 <h4>Top</h4>
-                                <svg id="mlws-top" width="300" height="300" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                                <svg id="lws-top" width="300" height="300" xmlns="http://www.w3.org/2000/svg" version="1.1">
                                     <!-- <circle cx="150" cy="150" r="30" fill="transparent" stroke="white" stroke-width="1"/> -->
                                     <circle cx="150" cy="150" r="110" fill="transparent" stroke="white" stroke-width="1"/>
                                     <text x="50%" y="5%" dominant-baseline="middle" text-anchor="middle" fill="white">Front</text>
@@ -195,17 +175,17 @@
                 </div>
                 <div class="row pt-3">
                     <div class="col">
-                        <h3>Units with this MLWS:</h3>
+                        <h3>Units with this LWS:</h3>
                         <?php
-                            $unitsWithMLWS = PDO_FetchAll("SELECT ifnull(UNITS.UnitLabel, UNITSENSORS.UnitUniqueName) as UnitLabel FROM UNITSENSORS
+                            $unitsWithLWS = PDO_FetchAll("SELECT ifnull(UNITS.UnitLabel, UNITSENSORS.UnitUniqueName) as UnitLabel FROM UNITSENSORS
                                                             LEFT JOIN UNITS
                                                             ON UNITS.UnitUniqueName = UNITSENSORS.UnitUniqueName
                                                             WHERE UNITSENSORS.SensorUniqueName = :name
-                                                            ORDER BY UnitLabel ASC", array("name"=>$selectedMLWS));
+                                                            ORDER BY UnitLabel ASC", array("name"=>$selectedLWS));
                         ?>
                         <ul>
                             <?php
-                                foreach($unitsWithMLWS as $unit) {
+                                foreach($unitsWithLWS as $unit) {
                                     echo "<li>".$unit['UnitLabel']."</li>";
                                 }
                             ?>
@@ -218,13 +198,13 @@
                     <fieldset class="form-group border p-2">
                         <legend class="w-auto">Colour Indicators</legend>
                         <p>
-                            <span style="color:green">Green</span> = MLWS detects the missile approach vector<br />
-                            <span style="color:red">Red</span> = MLWS does not detect the missile approach vector<br />
-                            <span style="color:white">White/Transparent</span> = No indicated MLWS coverage
+                            <span style="color:green">Green</span> = LWS detects the laser vector<br />
+                            <span style="color:red">Red</span> = LWS does not detect the laser vector<br />
+                            <span style="color:white">White/Transparent</span> = No indicated LWS coverage
                         </p>
                     </fieldset>
                     <div class="btn-group" role="group" aria-label="3D Viewer Controls">
-                        <button id="show3DMLWS" class="btn btn-secondary">Toggle 3d MLWS</button>
+                        <button id="show3DLWS" class="btn btn-secondary">Toggle 3d LWS</button>
                     </div>
                 </div>
                 <div class="pt-4 pb-4 d-flex justify-content-center" id="sensor-viewer"></div>
@@ -239,7 +219,7 @@
                                 <th>Horizontal Width (Centred on Azimuth)</th>
                                 <th>Elevation (0 = Horizon, Positive = Up, Negative = Down)</th>
                                 <th>Elevation Width (Centred on Elevation)</th>
-                                <th>Signal Angle Finder (No = Sector MLWS)</th>
+                                <th>Signal Angle Finder (No = Sector LWS)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -468,7 +448,7 @@
             threedLoaded = false;
             }
 
-        function load3dMLWS() {
+        function load3dLWS() {
             init();
             animate();
             threedLoaded = true;
@@ -478,14 +458,14 @@
             camera.layers.toggle(2);
         }
 
-        var show3d = document.getElementById('show3DMLWS');
+        var show3d = document.getElementById('show3DLWS');
         show3d.addEventListener('click', function() {
             console.log('clicked');
             if (threedLoaded) {
                 $('#togglelayer').toggleClass('d-none');
                 dispose();
             } else {
-                load3dMLWS();
+                load3dLWS();
                 $('#togglelayer').toggleClass('d-none');
             }
         })
@@ -499,7 +479,7 @@
             })
         }
 
-        var triggerTabList = [].slice.call(document.querySelectorAll('#mlws-tabs a'))
+        var triggerTabList = [].slice.call(document.querySelectorAll('#lws-tabs a'))
             triggerTabList.forEach(function (triggerEl) {
             var tabTrigger = new bootstrap.Tab(triggerEl)
 

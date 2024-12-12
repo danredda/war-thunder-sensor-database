@@ -12,7 +12,9 @@
                                 UNION 
                                 SELECT RadarUniqueName AS SensorUniqueName, \"RADAR\" AS SensorType FROM RADAR
                                 UNION
-                                SELECT MLWSUniqueName AS SensorUniqueName, \"MLWS\" AS SensorType FROM MLWS";
+                                SELECT MLWSUniqueName AS SensorUniqueName, \"MLWS\" AS SensorType FROM MLWS
+                                UNION
+                                SELECT LWSUniqueName AS SensorUniqueName, \"LWS\" AS SensorType FROM LWS";
     $FullSensorData = PDO_FetchAll($sensorUniqueNameQuery);
 
     $flightmodelURL = "https://api.dm.wt.flareflo.dev/files/aces.vromfs.bin/gamedata/flightmodels?version=$versionNumber";

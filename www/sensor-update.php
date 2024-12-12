@@ -136,6 +136,24 @@
         public $Priority;
     }
 
+    class LWS {
+        public $Name;
+        public $LWSUniqueName;
+        public $RangeTargetToSpot;
+        public $RangeOwnerToSpot;
+        public $Band15;
+        public $Band16;
+    }
+
+    class LWS_RECEIVER {
+        public $LWSUniqueName;
+        public $Azimuth;
+        public $HorizontalWidth;
+        public $Elevation;
+        public $VerticalWidth;
+        public $AngleFind;
+    }
+
     class MLWS {
         public $Name;
         public $MLWSUniqueName;
@@ -228,6 +246,8 @@
 
 
     // DELETE ALL EXISTING SENSOR DATA
+    PDO_Execute("DELETE FROM LWS_RECEIVERS");
+    PDO_Execute("DELETE FROM LWS");
     PDO_Execute("DELETE FROM MLWS_RECEIVERS");
     PDO_Execute("DELETE FROM MLWS");
     PDO_Execute("DELETE FROM RWR_RECEIVERS");
@@ -257,6 +277,10 @@
                     break;
                 case 'mlws':
                     processMLWS($sensorJson, $sensorUniqueName);
+                    break;
+                case 'lws':
+                    processLWS($sensorJson, $sensorUniqueName);
+                    echo "FOUND LWS ".$sensorUniqueName;
                     break;
                 default:
                     // NOT configured, skip
@@ -590,6 +614,55 @@
         return $validModes;
     }
 
+    function processLWS($sensorObject, $uniqueName) {
+
+        // get the core mlws definition
+        $lwsData = defineLWS($sensorObject, $uniqueName);
+
+        // Get the receiver data
+        $receiverList = array();
+        if (isset($sensorObject->receivers->receiver)) {
+            $receivers = $sensorObject->receivers->receiver;
+            if (is_array($receivers)) {
+                foreach($receivers as $receiver) {
+                    $receiverData = processLWSReceivers($receiver, $uniqueName);
+                    $receiverList[] = $receiverData;
+                }
+            } else {
+                $receiverList[] = processLWSReceivers($receivers, $uniqueName);
+            }
+        }
+        
+        insertLWSData($lwsData, $receiverList);
+    }
+
+    function processLWSReceivers($receiverData, $uniqueSensorName) {
+        $receiverDefinition = new LWS_RECEIVER();
+        $receiverDefinition->LWSUniqueName = $uniqueSensorName;
+        $receiverDefinition->Azimuth = checkAndConvertFloat($receiverData, 'azimuth');
+        $receiverDefinition->HorizontalWidth = checkAndConvertFloat($receiverData, 'azimuthWidth');
+        $receiverDefinition->Elevation = checkAndConvertFloat($receiverData, 'elevation');
+        $receiverDefinition->VerticalWidth = checkAndConvertFloat($receiverData, 'elevationWidth');
+        $receiverDefinition->AngleFind = checkAndConvertBoolean($receiverData, 'angleFinder');
+        return $receiverDefinition;
+    }
+
+    function defineLWS($sensorObject, $uniqueName) {
+        $lwsName = $sensorObject->name;
+        if (isset($sensorObject->{'override:name'})) {
+            $lwsName = $sensorObject->{'override:name'};
+        }
+
+        $lwsDefinition = new LWS();
+        $lwsDefinition->Name = $lwsName;
+        $lwsDefinition->LWSUniqueName = $uniqueName;
+        $lwsDefinition->RangeTargetToSpot = checkAndConvertFloat($sensorObject, 'rangeTargetToSpot');
+        $lwsDefinition->RangeOwnerToSpot = checkAndConvertFloat($sensorObject, 'rangeOwnerToSpot');
+        $lwsDefinition->Band15 = checkAndConvertBoolean($sensorObject, 'band15');
+        $lwsDefinition->Band16 = checkAndConvertBoolean($sensorObject, 'band16');
+        return $lwsDefinition;
+    }
+
     function processMLWS($sensorObject, $uniqueName) {
 
         // get the core mlws definition
@@ -871,6 +944,30 @@
 
         // SET RWR Version to versionNumber
         PDO_Execute("UPDATE VERSIONDATA SET RWR='$versionNumber'");
+
+    }
+
+    function insertLWSData($lws, $receivers) {
+        global $versionNumber;
+
+        $lwsValues = "('".implode("','",(array) $lws)."')";
+        $lwsInsert = "INSERT INTO LWS (Name, LWSUniqueName, RangeTargetToSpot, RangeOwnerToSpot, Band15, Band16)
+                        VALUES $lwsValues";
+        PDO_Execute($lwsInsert);
+
+        if (sizeof($receivers) > 0) {
+            $receiverValuesArray = array();
+            foreach($receivers as $receiver) {
+                $receiverValuesArray[] = "('".implode("','",(array) $receiver)."')";
+            }
+            $receiverValues = implode(",", $receiverValuesArray);
+            $receiverInsert = "INSERT INTO LWS_RECEIVERS (LWSUniqueFileName, Azimuth, HorizontalWidth, Elevation, VerticalWidth, AngleFind)
+                                VALUES $receiverValues";
+            PDO_Execute($receiverInsert);
+        }
+
+        // SET LWS Version to versionNumber
+        PDO_Execute("UPDATE VERSIONDATA SET LWS='$versionNumber'");
 
     }
 

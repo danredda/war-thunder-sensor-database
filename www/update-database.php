@@ -40,24 +40,26 @@
             <div class="col">
                 <table class="table table-bordered text-center">
                     <thead>
-                        <th scope="col" class="col-3">RADAR</th>
-                        <th scope="col" class="col-3">MLWS</th>
-                        <th scope="col" class="col-3">RWR</th>
-                        <th scope="col" class="col-3">UNITSENSORS</th>
+                        <th scope="col" class="col-2">RADAR</th>
+                        <th scope="col" class="col-2">MLWS</th>
+                        <th scope="col" class="col-2">LWS</th>
+                        <th scope="col" class="col-2">RWR</th>
+                        <th scope="col" class="col-4">UNITSENSORS</th>
                     </thead>
                     <tbody>
                         <tr scope="row">
                         <?php 
                             echo '<td>'.$versions['RADAR'].'</td>';
                             echo '<td>'.$versions['MLWS'].'</td>';
+                            echo '<td>'.$versions['LWS'].'</td>';
                             echo '<td>'.$versions['RWR'].'</td>';
                             echo '<td>'.$versions['UNITSENSORS'].'</td>';
                         ?>
                         </tr>
                         <tr scope="row">
-                            <td colspan='3'>
+                            <td colspan='4'>
                                 <?php
-                                    if ($latestVersion != $versions['RADAR'] || $latestVersion != $versions['RWR'] || $latestVersion != $versions['MLWS']) {
+                                    if ($latestVersion != $versions['RADAR'] || $latestVersion != $versions['RWR'] || $latestVersion != $versions['MLWS'] || $latestVersion != $versions['LWS']) {
                                         echo "<button class='btn btn-secondary' id='update-sensors' value='$latestVersion' >Update Sensor Datasets</button>";
                                     }
                                 ?>
@@ -72,7 +74,7 @@
                             </td>
                             <td>
                                 <?php
-                                    if ($latestVersion != $versions['UNITSENSORS'] && $latestVersion == $versions['RWR'] && $latestVersion == $versions['RADAR'] && $latestVersion == $versions['MLWS']) {
+                                    if ($latestVersion != $versions['UNITSENSORS'] && $latestVersion == $versions['RWR'] && $latestVersion == $versions['RADAR'] && $latestVersion == $versions['MLWS'] && $latestVersion == $versions['LWS']) {
                                         echo "<button class='btn btn-secondary' id='update-unitsensors' value='$latestVersion'>Update Unit Sensor Dataset</button>";
                                     } else if ($latestVersion != $versions['UNITSENSORS']) {
                                         echo "Please update the Sensors first - that is used to determine what is and is not an RWR, MLWS, or radar in the Unit Files.";
